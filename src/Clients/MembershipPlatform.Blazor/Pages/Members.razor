@@ -1,0 +1,83 @@
+@page "/members"
+@inject IMembershipApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>Members</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Member directory</p>
+    <h1>Members</h1>
+    <p>Browse the seeded members, compare statuses, and open a member to exercise their vertical slices.</p>
+</section>
+
+@if (IsLoading)
+{
+    <p>Loading members…</p>
+}
+else if (Error is not null)
+{
+    <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="Error" />
+}
+else
+{
+    <nav class="filter-nav" aria-label="Filter members by status">
+        <button class="@(SelectedStatus == "All" ? "selected" : null)" @onclick='() => SelectStatus("All")'>All (@MemberItems.Count)</button>
+        <button class="@(SelectedStatus == "Active" ? "selected" : null)" @onclick='() => SelectStatus("Active")'>Active (@Count("Active"))</button>
+        <button class="@(SelectedStatus == "Inactive" ? "selected" : null)" @onclick='() => SelectStatus("Inactive")'>Inactive (@Count("Inactive"))</button>
+    </nav>
+
+    @if (SelectedStatus == "Inactive")
+    {
+        <aside class="demo-callout">Open an inactive member and try checking in to demonstrate the <code>Member.Inactive</code> application failure.</aside>
+    }
+
+    <section class="panel table-wrapper">
+        <table class="api-table member-table">
+            <thead>
+                <tr><th>Member</th><th>Status</th><th>Joined</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var member in FilteredMembers)
+                {
+                    <tr>
+                        <td><strong>@member.Name</strong><span class="member-email">@member.Email</span></td>
+                        <td><span class="status-badge @member.Status.ToLowerInvariant()">@member.Status</span></td>
+                        <td>@member.JoinDate.ToLocalTime().ToString("MMM d, yyyy")</td>
+                        <td class="action-cell"><NavLink class="text-link" href="@($"members/{member.MemberId:D}")">View member →</NavLink></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<MemberSummary> MemberItems { get; set; } = [];
+    private string SelectedStatus { get; set; } = "All";
+    private ApiError? Error { get; set; }
+    private bool IsLoading { get; set; } = true;
+
+    private IEnumerable<MemberSummary> FilteredMembers =>
+        SelectedStatus == "All"
+            ? MemberItems
+            : MemberItems.Where(member => string.Equals(
+                member.Status,
+                SelectedStatus,
+                StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (query.Contains("status=Active", StringComparison.OrdinalIgnoreCase)) SelectedStatus = "Active";
+        if (query.Contains("status=Inactive", StringComparison.OrdinalIgnoreCase)) SelectedStatus = "Inactive";
+        var result = await ApiClient.GetMembersAsync(CancellationToken.None);
+        Error = result.Error;
+        MemberItems = result.Value ?? [];
+        IsLoading = false;
+    }
+
+    private int Count(string status) => MemberItems.Count(member =>
+        string.Equals(member.Status, status, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectStatus(string status) => SelectedStatus = status;
+}

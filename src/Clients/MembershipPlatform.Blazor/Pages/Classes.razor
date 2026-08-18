@@ -1,0 +1,73 @@
+@page "/classes"
+@inject IMembershipApiClient ApiClient
+
+<PageTitle>Classes</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Class directory</p>
+    <h1>Fitness classes</h1>
+    <p>Browse the schedule, compare remaining capacity, and open a class to view or add registrations.</p>
+</section>
+
+@if (IsLoading)
+{
+    <p>Loading classes…</p>
+}
+else if (Error is not null)
+{
+    <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="Error" />
+}
+else
+{
+    @if (ClassItems.Count == 0)
+    {
+        <section class="panel"><p class="muted">No fitness classes are available.</p></section>
+    }
+    else
+    {
+    <aside class="demo-callout">Open a class to view registered members. Register an active member twice to demonstrate successful registration followed by duplicate protection.</aside>
+    <div class="card-grid">
+        @foreach (var fitnessClass in ClassItems)
+        {
+            var registrationCount = GetRegistrationCount(fitnessClass.ClassId);
+            var remainingCapacity = Math.Max(fitnessClass.Capacity - registrationCount, 0);
+            <article class="card class-card">
+                <p class="eyebrow">@fitnessClass.StartTime.ToLocalTime().ToString("ddd, MMM d · h:mm tt")</p>
+                <h2>@fitnessClass.Name</h2>
+                <p class="metric"><strong>@registrationCount</strong> of @fitnessClass.Capacity registered</p>
+                <progress value="@registrationCount" max="@Math.Max(fitnessClass.Capacity, 1)"></progress>
+                <div class="card-footer"><span class="muted">@remainingCapacity places remaining</span><NavLink class="text-link" href="@($"classes/{fitnessClass.ClassId:D}")">View class →</NavLink></div>
+            </article>
+        }
+    </div>
+    }
+}
+
+@code {
+    private IReadOnlyList<FitnessClass> ClassItems { get; set; } = [];
+    private Dictionary<Guid, ClassRegistrationSummary> Summaries { get; set; } = [];
+    private ApiError? Error { get; set; }
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var classesTask = ApiClient.GetClassesAsync(CancellationToken.None);
+        var summariesTask = ApiClient.GetRegistrationSummaryAsync(CancellationToken.None);
+        await Task.WhenAll(classesTask, summariesTask);
+
+        var classesResult = await classesTask;
+        var summariesResult = await summariesTask;
+        Error = classesResult.Error ?? summariesResult.Error;
+        ClassItems = (classesResult.Value ?? [])
+            .OrderBy(fitnessClass => fitnessClass.StartTime)
+            .ToArray();
+        Summaries = (summariesResult.Value ?? [])
+            .ToDictionary(summary => summary.ClassId);
+        IsLoading = false;
+    }
+
+    private int GetRegistrationCount(Guid classId) =>
+        Summaries.TryGetValue(classId, out var summary)
+            ? summary.RegistrationCount
+            : 0;
+}

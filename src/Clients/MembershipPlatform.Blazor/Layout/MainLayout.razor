@@ -1,0 +1,22 @@
+@inherits LayoutComponentBase
+
+<header class="site-header">
+    <div class="container header-content">
+        <NavLink class="brand" href="" Match="NavLinkMatch.All">MembershipPlatform</NavLink>
+        <nav class="site-nav" aria-label="Primary navigation">
+            <NavLink href="" Match="NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink href="members">Members</NavLink>
+            <NavLink href="classes">Classes</NavLink>
+            <NavLink href="api-reference">API Reference</NavLink>
+        </nav>
+        <span class="badge">Blazor client</span>
+    </div>
+</header>
+
+<main class="container">
+    @Body
+</main>
+
+<footer class="container site-footer">
+    Blazor WebAssembly client → versioned HTTP API → focused application use cases
+</footer>

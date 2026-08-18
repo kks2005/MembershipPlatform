@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - MembershipPlatform</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-content">
+            <a class="brand" asp-page="/Index">MembershipPlatform</a>
+            <nav class="site-nav" aria-label="Primary navigation">
+                <a asp-page="/Index">Dashboard</a>
+                <a asp-page="/Members/Index">Members</a>
+                <a asp-page="/Classes/Index">Classes</a>
+                <a asp-page="/ApiReference">API Reference</a>
+            </nav>
+            <span class="badge">POC client</span>
+        </div>
+    </header>
+    <main class="container">
+        @if (TempData["Message"] is string message)
+        {
+            <div class="notice" role="status">@message</div>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <div class="error" role="alert">@error</div>
+        }
+        @RenderBody()
+    </main>
+    <footer class="container site-footer">
+        Razor Pages client → versioned HTTP API → focused application use cases
+    </footer>
+</body>
+</html>

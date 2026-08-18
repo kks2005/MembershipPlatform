@@ -1,0 +1,146 @@
+@page "/classes/{ClassId:guid}"
+@inject IMembershipApiClient ApiClient
+
+<PageTitle>Class Details</PageTitle>
+
+<NavLink class="back-link" href="classes">← Classes</NavLink>
+
+@if (IsLoading)
+{
+    <p>Loading class…</p>
+}
+else if (Error is not null)
+{
+    <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="Error" />
+}
+else if (FitnessClass is not null)
+{
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Fitness class</p>
+            <h1>@FitnessClass.Name</h1>
+            <p>@FitnessClass.StartTime.ToLocalTime().ToString("f") · Capacity @FitnessClass.Capacity</p>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="notice" role="status">@Message</div>
+    }
+    @if (ActionError is not null)
+    {
+        <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="ActionError" />
+    }
+
+    <div class="two-column">
+        <section class="panel">
+            <h2>Registered members</h2>
+            @if (Members.Count == 0)
+            {
+                <p class="muted">No active registrations.</p>
+            }
+            @foreach (var member in Members)
+            {
+                <div class="list-row">
+                    <div><strong>@member.Name</strong><small>@member.Email</small></div>
+                    <span class="status-badge @member.Status.ToLowerInvariant()">@member.Status</span>
+                    <NavLink class="text-link" href="@($"members/{member.MemberId:D}")">View</NavLink>
+                </div>
+            }
+        </section>
+        <section class="panel">
+            <p class="eyebrow">Thin vertical slice</p>
+            <h2>Register a member</h2>
+            @if (AvailableMembers.Count == 0)
+            {
+                <p class="muted">No members are available.</p>
+            }
+            else
+            {
+                <label for="member-select">Member</label>
+                <select id="member-select" @bind="SelectedMemberId">
+                    @foreach (var member in AvailableMembers)
+                    {
+                        <option value="@member.MemberId">@member.Name — @member.Status</option>
+                    }
+                </select>
+                <p class="muted form-hint">Active, inactive, and already-registered members remain selectable so the API's success and rejection paths can be demonstrated.</p>
+                <button class="button" disabled="@IsSubmitting" @onclick="RegisterAsync">Register member</button>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid ClassId { get; set; }
+
+    private FitnessClass? FitnessClass { get; set; }
+    private IReadOnlyList<ClassMember> Members { get; set; } = [];
+    private IReadOnlyList<MemberSummary> AvailableMembers { get; set; } = [];
+    private Guid SelectedMemberId { get; set; }
+    private ApiError? Error { get; set; }
+    private ApiError? ActionError { get; set; }
+    private string? Message { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsSubmitting { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IsLoading = true;
+        var classesTask = ApiClient.GetClassesAsync(CancellationToken.None);
+        var classMembersTask = ApiClient.GetClassMembersAsync(ClassId, CancellationToken.None);
+        var membersTask = ApiClient.GetMembersAsync(CancellationToken.None);
+        await Task.WhenAll(classesTask, classMembersTask, membersTask);
+
+        var classesResult = await classesTask;
+        var classMembersResult = await classMembersTask;
+        var membersResult = await membersTask;
+        Error = classesResult.Error ?? classMembersResult.Error ?? membersResult.Error;
+        FitnessClass = classesResult.Value?.SingleOrDefault(item => item.ClassId == ClassId);
+        Members = classMembersResult.Value ?? [];
+        AvailableMembers = membersResult.Value ?? [];
+        SelectedMemberId = AvailableMembers.FirstOrDefault(member =>
+            string.Equals(member.Status, "Active", StringComparison.OrdinalIgnoreCase))?.MemberId
+            ?? (AvailableMembers.Count > 0 ? AvailableMembers[0].MemberId : Guid.Empty);
+
+        if (Error is null && FitnessClass is null)
+        {
+            Error = new ApiError("Class.NotFound", "The class was not found.", null);
+        }
+
+        IsLoading = false;
+    }
+
+    private async Task RegisterAsync()
+    {
+        if (SelectedMemberId == Guid.Empty)
+        {
+            return;
+        }
+
+        IsSubmitting = true;
+        Message = null;
+        ActionError = null;
+        var result = await ApiClient.RegisterMemberAsync(
+            ClassId,
+            SelectedMemberId,
+            CancellationToken.None);
+
+        if (result.IsSuccess)
+        {
+            Message = "Member registered successfully. Refresh Razor Pages to see the same change.";
+            var membersResult = await ApiClient.GetClassMembersAsync(
+                ClassId,
+                CancellationToken.None);
+            Members = membersResult.Value ?? Members;
+            ActionError = membersResult.Error;
+        }
+        else
+        {
+            ActionError = result.Error;
+        }
+
+        IsSubmitting = false;
+    }
+}

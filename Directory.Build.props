@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AnalysisLevel>9.0-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build metadata">
+    <!-- Replace the organization and repository placeholders before publishing. -->
+    <Company>Your Company Name</Company>
+    <Authors>Your Company Name</Authors>
+    <Product>MembershipPlatform</Product>
+    <Description>Membership platform services and libraries.</Description>
+    <Copyright>Copyright © Your Company Name 2026</Copyright>
+
+    <VersionPrefix>0.1.0</VersionPrefix>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/your-organization/MembershipPlatform</RepositoryUrl>
+
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

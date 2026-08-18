@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MembershipPlatform.Application\MembershipPlatform.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\MembershipPlatform.Storage.Local\MembershipPlatform.Storage.Local.csproj" />
+    <ProjectReference Include="..\Persistence\MembershipPlatform.Data.SqlServer\MembershipPlatform.Data.SqlServer.csproj" />
+    <ProjectReference Include="..\Persistence\MembershipPlatform.Data.Sqlite\MembershipPlatform.Data.Sqlite.csproj" />
+  </ItemGroup>
+
+</Project>

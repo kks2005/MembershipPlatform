@@ -1,0 +1,180 @@
+@page "/members/{MemberId:guid}"
+@inject IMembershipApiClient ApiClient
+
+<PageTitle>Member Details</PageTitle>
+
+<NavLink class="back-link" href="members">← Members</NavLink>
+
+@if (IsLoading)
+{
+    <p>Loading member…</p>
+}
+else if (Error is not null)
+{
+    <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="Error" />
+}
+else if (Member is not null)
+{
+    <section class="page-header member-header">
+        <div class="member-identity">
+            <p class="eyebrow">Member profile</p>
+            <h1>@Member.Name</h1>
+            <div class="member-meta">
+                <span class="status-badge @Member.Status.ToLowerInvariant()">@Member.Status</span>
+                <span>@Member.Email</span>
+                <span>Joined @Member.JoinDate.ToLocalTime().ToString("MMM d, yyyy")</span>
+            </div>
+            <span class="member-id">Member ID: @Member.MemberId</span>
+        </div>
+        <div class="action-stack">
+            <button class="button" disabled="@IsSubmitting" @onclick="CheckInAsync">Check in member</button>
+            @if (string.Equals(Member.Status, "Inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                <span class="demo-hint">Try this action to demonstrate inactive-member rejection.</span>
+            }
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="notice" role="status">@Message</div>
+    }
+    @if (ActionError is not null)
+    {
+        <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="ActionError" />
+    }
+
+    <div class="two-column">
+        <section class="panel">
+            <h2>Registered classes</h2>
+            @if (Classes.Count == 0)
+            {
+                <p class="muted">No active registrations.</p>
+            }
+            @foreach (var fitnessClass in Classes)
+            {
+                <div class="list-row">
+                    <div><strong>@fitnessClass.Name</strong><small>@fitnessClass.StartTime.ToLocalTime().ToString("g")</small></div>
+                    <NavLink href="@($"classes/{fitnessClass.ClassId:D}")">View</NavLink>
+                </div>
+            }
+        </section>
+        <section class="panel">
+            <h2>Recent check-ins</h2>
+            @if (CheckIns.Count == 0)
+            {
+                <p class="muted">No check-ins recorded.</p>
+            }
+            @foreach (var checkIn in CheckIns.OrderByDescending(item => item.CheckInDate).Take(10))
+            {
+                <div class="list-row">@checkIn.CheckInDate.ToLocalTime().ToString("f")</div>
+            }
+        </section>
+    </div>
+
+    <section class="panel upload-panel">
+        <div>
+            <p class="eyebrow">Infrastructure-independent</p>
+            <h2>Upload member document</h2>
+            <p class="muted">Up to 10 MB. The client sees only an opaque storage key.</p>
+        </div>
+        <div class="upload-form">
+            <InputFile OnChange="SelectDocument" />
+            <button class="button" disabled="@(SelectedDocument is null || IsUploading)" @onclick="UploadDocumentAsync">Upload</button>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public Guid MemberId { get; set; }
+
+    private MemberSummary? Member { get; set; }
+    private IReadOnlyList<MemberCheckIn> CheckIns { get; set; } = [];
+    private IReadOnlyList<FitnessClass> Classes { get; set; } = [];
+    private ApiError? Error { get; set; }
+    private ApiError? ActionError { get; set; }
+    private string? Message { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsSubmitting { get; set; }
+    private bool IsUploading { get; set; }
+    private IBrowserFile? SelectedDocument { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IsLoading = true;
+        var membersTask = ApiClient.GetMembersAsync(CancellationToken.None);
+        var checkInsTask = ApiClient.GetMemberCheckInsAsync(MemberId, CancellationToken.None);
+        var classesTask = ApiClient.GetMemberClassesAsync(MemberId, CancellationToken.None);
+        await Task.WhenAll(membersTask, checkInsTask, classesTask);
+
+        var membersResult = await membersTask;
+        var checkInsResult = await checkInsTask;
+        var classesResult = await classesTask;
+        Error = membersResult.Error ?? checkInsResult.Error ?? classesResult.Error;
+        Member = membersResult.Value?.SingleOrDefault(member => member.MemberId == MemberId);
+        CheckIns = checkInsResult.Value ?? [];
+        Classes = classesResult.Value ?? [];
+
+        if (Error is null && Member is null)
+        {
+            Error = new ApiError("Member.NotFound", "The member was not found.", null);
+        }
+
+        IsLoading = false;
+    }
+
+    private async Task CheckInAsync()
+    {
+        IsSubmitting = true;
+        Message = null;
+        ActionError = null;
+        var result = await ApiClient.CheckInMemberAsync(MemberId, CancellationToken.None);
+
+        if (result.IsSuccess)
+        {
+            Message = "Member checked in successfully. The same result is now visible in both clients.";
+            var checkInsResult = await ApiClient.GetMemberCheckInsAsync(
+                MemberId,
+                CancellationToken.None);
+            CheckIns = checkInsResult.Value ?? CheckIns;
+            ActionError = checkInsResult.Error;
+        }
+        else
+        {
+            ActionError = result.Error;
+        }
+
+        IsSubmitting = false;
+    }
+
+    private void SelectDocument(InputFileChangeEventArgs args) => SelectedDocument = args.File;
+
+    private async Task UploadDocumentAsync()
+    {
+        if (SelectedDocument is null) return;
+
+        IsUploading = true;
+        Message = null;
+        ActionError = null;
+        await using var stream = SelectedDocument.OpenReadStream(10 * 1024 * 1024);
+        var result = await ApiClient.UploadMemberDocumentAsync(
+            MemberId,
+            SelectedDocument.Name,
+            SelectedDocument.ContentType,
+            stream,
+            CancellationToken.None);
+
+        if (result.IsSuccess)
+        {
+            Message = $"Document uploaded successfully. Storage key: {result.Value!.StorageKey}";
+            SelectedDocument = null;
+        }
+        else
+        {
+            ActionError = result.Error;
+        }
+
+        IsUploading = false;
+    }
+}

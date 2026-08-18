@@ -1,0 +1,74 @@
+@page "{classId:guid}"
+@model MembershipPlatform.Web.Pages.Classes.DetailsModel
+@{
+    ViewData["Title"] = "Class";
+}
+
+<a class="back-link" asp-page="/Classes/Index">← Classes</a>
+
+@if (Model.Error is not null)
+{
+    <partial name="_ApiError" model="Model.Error" />
+}
+else if (Model.FitnessClass is null)
+{
+    <div class="error-panel">Class not found.</div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Fitness class</p>
+            <h1>@Model.FitnessClass.Name</h1>
+            <p>@Model.FitnessClass.StartTime.ToLocalTime().ToString("f") · Capacity @Model.FitnessClass.Capacity</p>
+        </div>
+    </div>
+
+    <div class="two-column">
+        <section class="panel">
+            <h2>Registered members</h2>
+            @if (Model.Members.Count == 0)
+            {
+                <p class="muted">No active registrations.</p>
+            }
+            @foreach (var member in Model.Members)
+            {
+                <div class="list-row">
+                    <div>
+                        <strong>@member.Name</strong>
+                        <span>@member.Email</span>
+                    </div>
+                    <span class="status-badge @member.Status.ToLowerInvariant()">@member.Status</span>
+                    <a class="text-link" asp-page="/Members/Details"
+                       asp-route-memberId="@member.MemberId">View</a>
+                </div>
+            }
+        </section>
+
+        <section class="panel">
+            <p class="eyebrow">Thin vertical slice</p>
+            <h2>Register a member</h2>
+            @if (Model.AvailableMembers.Count == 0)
+            {
+                <p class="muted">No members are available.</p>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Register" asp-route-classId="@Model.ClassId">
+                    <label asp-for="MemberId">Member</label>
+                    <select asp-for="MemberId">
+                        @foreach (var member in Model.AvailableMembers)
+                        {
+                            <option value="@member.MemberId">@member.Name — @member.Status</option>
+                        }
+                    </select>
+                    <p class="muted form-hint">
+                        Active, inactive, and already-registered members remain selectable so the API's
+                        success and rejection paths can be demonstrated.
+                    </p>
+                    <button class="button" type="submit">Register member</button>
+                </form>
+            }
+        </section>
+    </div>
+}

@@ -1,0 +1,95 @@
+@page "/"
+@inject IMembershipApiClient ApiClient
+
+<PageTitle>Dashboard</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Client-independent demonstration</p>
+    <h1>Membership dashboard</h1>
+    <p>This deliberately small client references no backend projects. It consumes only the versioned JSON API through a DI-registered HTTP client.</p>
+</section>
+
+@if (IsLoading)
+{
+    <p>Loading dashboard…</p>
+}
+else if (Error is not null)
+{
+    <MembershipPlatform.Blazor.Shared.ApiErrorPanel Error="Error" />
+}
+else
+{
+    <section class="summary-grid" aria-label="Membership summary">
+        <NavLink class="summary-card" href="members"><span>Members</span><strong>@Members.Count</strong><small>View all members</small></NavLink>
+        <NavLink class="summary-card" href="members?status=Active"><span>Active</span><strong>@CountMembers("Active")</strong><small>Active members</small></NavLink>
+        <NavLink class="summary-card" href="members?status=Inactive"><span>Inactive</span><strong>@CountMembers("Inactive")</strong><small>Demonstrate rejection</small></NavLink>
+        <NavLink class="summary-card" href="classes"><span>Classes</span><strong>@Classes.Count</strong><small>Browse schedule</small></NavLink>
+        <NavLink class="summary-card" href="classes"><span>Registrations</span><strong>@Summaries.Sum(item => item.RegistrationCount)</strong><small>Across all classes</small></NavLink>
+    </section>
+
+    <section class="panel demo-guide">
+        <div>
+            <p class="eyebrow">Suggested walkthrough</p>
+            <h2>Demonstrate the vertical slices</h2>
+            <p class="muted">Each action uses the versioned API; business decisions remain in Application.</p>
+        </div>
+        <ol class="demo-steps">
+            <li><NavLink href="members?status=Active">Open an active member</NavLink> and create a check-in.</li>
+            <li><NavLink href="members?status=Inactive">Open an inactive member</NavLink> and demonstrate rejection.</li>
+            <li><NavLink href="classes">Open a class</NavLink>, register a member, then retry to demonstrate duplicate protection.</li>
+            <li><NavLink href="api-reference">Review the API reference</NavLink> to connect screens to endpoints.</li>
+        </ol>
+    </section>
+
+    <section>
+        <div class="section-heading">
+            <div><p class="eyebrow">Schedule preview</p><h2>Upcoming classes</h2></div>
+            <NavLink class="button secondary" href="classes">View all classes</NavLink>
+        </div>
+        @if (Classes.Count == 0)
+        {
+            <div class="panel"><p class="muted">No fitness classes are available.</p></div>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (var fitnessClass in Classes.Take(3))
+                {
+                    <article class="card">
+                        <p class="eyebrow">@fitnessClass.StartTime.ToLocalTime().ToString("ddd, MMM d · h:mm tt")</p>
+                        <h3>@fitnessClass.Name</h3>
+                        <p class="metric"><strong>@GetRegistrationCount(fitnessClass.ClassId)</strong> of @fitnessClass.Capacity registered</p>
+                        <NavLink class="text-link" href="@($"classes/{fitnessClass.ClassId:D}")">View class →</NavLink>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+}
+
+@code {
+    private IReadOnlyList<MemberSummary> Members { get; set; } = [];
+    private IReadOnlyList<FitnessClass> Classes { get; set; } = [];
+    private IReadOnlyList<ClassRegistrationSummary> Summaries { get; set; } = [];
+    private ApiError? Error { get; set; }
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var membersTask = ApiClient.GetMembersAsync(CancellationToken.None);
+        var classesTask = ApiClient.GetClassesAsync(CancellationToken.None);
+        var summariesTask = ApiClient.GetRegistrationSummaryAsync(CancellationToken.None);
+        await Task.WhenAll(membersTask, classesTask, summariesTask);
+        var membersResult = await membersTask;
+        var classesResult = await classesTask;
+        var summariesResult = await summariesTask;
+        Error = membersResult.Error ?? classesResult.Error ?? summariesResult.Error;
+        Members = membersResult.Value ?? [];
+        Classes = (classesResult.Value ?? []).OrderBy(item => item.StartTime).ToArray();
+        Summaries = summariesResult.Value ?? [];
+        IsLoading = false;
+    }
+
+    private int CountMembers(string status) => Members.Count(member => string.Equals(member.Status, status, StringComparison.OrdinalIgnoreCase));
+    private int GetRegistrationCount(Guid classId) => Summaries.FirstOrDefault(item => item.ClassId == classId)?.RegistrationCount ?? 0;
+}

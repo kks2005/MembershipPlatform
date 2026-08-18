@@ -1,0 +1,98 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<section class="hero">
+    <p class="eyebrow">Client-independent demonstration</p>
+    <h1>Membership dashboard</h1>
+    <p>
+        This deliberately small client references no backend projects. It consumes
+        only the versioned JSON API through a DI-registered HTTP client.
+    </p>
+</section>
+
+@if (Model.Error is not null)
+{
+    <partial name="_ApiError" model="Model.Error" />
+}
+else
+{
+    <section class="summary-grid" aria-label="Membership summary">
+        <a class="summary-card" asp-page="/Members/Index">
+            <span>Members</span>
+            <strong>@Model.MemberCount</strong>
+            <small>View all members</small>
+        </a>
+        <a class="summary-card" asp-page="/Members/Index" asp-route-status="Active">
+            <span>Active</span>
+            <strong>@Model.ActiveMemberCount</strong>
+            <small>Active members</small>
+        </a>
+        <a class="summary-card" asp-page="/Members/Index" asp-route-status="Inactive">
+            <span>Inactive</span>
+            <strong>@Model.InactiveMemberCount</strong>
+            <small>Demonstrate rejection</small>
+        </a>
+        <a class="summary-card" asp-page="/Classes/Index">
+            <span>Classes</span>
+            <strong>@Model.ClassCount</strong>
+            <small>Browse schedule</small>
+        </a>
+        <a class="summary-card" asp-page="/Classes/Index">
+            <span>Registrations</span>
+            <strong>@Model.RegistrationCount</strong>
+            <small>Across all classes</small>
+        </a>
+    </section>
+
+    <section class="panel demo-guide">
+        <div>
+            <p class="eyebrow">Suggested walkthrough</p>
+            <h2>Demonstrate the vertical slices</h2>
+            <p class="muted">Each action uses the versioned API; business decisions remain in Application.</p>
+        </div>
+        <ol class="demo-steps">
+            <li><a asp-page="/Members/Index" asp-route-status="Active">Open an active member</a> and create a check-in.</li>
+            <li><a asp-page="/Members/Index" asp-route-status="Inactive">Open an inactive member</a> and demonstrate rejection.</li>
+            <li><a asp-page="/Classes/Index">Open a class</a>, register a member, then retry to demonstrate duplicate protection.</li>
+            <li><a asp-page="/ApiReference">Review the API reference</a> to connect screens to endpoints.</li>
+        </ol>
+    </section>
+
+    <section>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Schedule preview</p>
+                <h2>Upcoming classes</h2>
+            </div>
+            <a class="button secondary" asp-page="/Classes/Index">View all classes</a>
+        </div>
+
+        @if (Model.UpcomingClasses.Count == 0)
+        {
+            <div class="panel">
+                <p class="muted">No fitness classes are available.</p>
+            </div>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (var fitnessClass in Model.UpcomingClasses)
+                {
+                    <article class="card">
+                        <p class="eyebrow">@fitnessClass.StartTime.ToLocalTime().ToString("ddd, MMM d · h:mm tt")</p>
+                        <h3>@fitnessClass.Name</h3>
+                        <p class="metric">
+                            <strong>@Model.GetRegistrationCount(fitnessClass.ClassId)</strong>
+                            of @fitnessClass.Capacity registered
+                        </p>
+                        <a class="text-link" asp-page="/Classes/Details"
+                           asp-route-classId="@fitnessClass.ClassId">View class →</a>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+}

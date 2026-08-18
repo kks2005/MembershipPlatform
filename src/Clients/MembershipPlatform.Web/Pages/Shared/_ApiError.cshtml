@@ -1,0 +1,10 @@
+@model ApiError
+
+<div class="error-panel" role="alert">
+    <strong>@Model.Message</strong>
+    <span>Code: @Model.Code</span>
+    @if (!string.IsNullOrWhiteSpace(Model.OperationId))
+    {
+        <span>Reference: @Model.OperationId</span>
+    }
+</div>

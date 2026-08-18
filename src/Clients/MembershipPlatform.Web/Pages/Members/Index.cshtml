@@ -1,0 +1,74 @@
+@page
+@model MembershipPlatform.Web.Pages.Members.IndexModel
+@{
+    ViewData["Title"] = "Members";
+}
+
+<section class="hero">
+    <p class="eyebrow">Member directory</p>
+    <h1>Members</h1>
+    <p>Browse the seeded members, compare statuses, and open a member to exercise their vertical slices.</p>
+</section>
+
+@if (Model.Error is not null)
+{
+    <partial name="_ApiError" model="Model.Error" />
+}
+else
+{
+    <nav class="filter-nav" aria-label="Filter members by status">
+        <a class="@(Model.SelectedStatus == "All" ? "selected" : null)"
+           asp-page="/Members/Index">All <span>@Model.TotalCount</span></a>
+        <a class="@(Model.SelectedStatus == "Active" ? "selected" : null)"
+           asp-page="/Members/Index" asp-route-status="Active">Active <span>@Model.ActiveCount</span></a>
+        <a class="@(Model.SelectedStatus == "Inactive" ? "selected" : null)"
+           asp-page="/Members/Index" asp-route-status="Inactive">Inactive <span>@Model.InactiveCount</span></a>
+    </nav>
+
+    @if (Model.SelectedStatus == "Inactive")
+    {
+        <aside class="demo-callout">
+            Open an inactive member and try checking in to demonstrate the
+            <code>Member.Inactive</code> application failure.
+        </aside>
+    }
+
+    <section class="panel table-wrapper">
+        @if (Model.Members.Count == 0)
+        {
+            <p class="muted">No members match this status.</p>
+        }
+        else
+        {
+            <table class="api-table member-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Member</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Joined</th>
+                        <th scope="col"><span class="visually-hidden">Action</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var member in Model.Members)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@member.Name</strong>
+                                <span class="member-email">@member.Email</span>
+                            </td>
+                            <td>
+                                <span class="status-badge @member.Status.ToLowerInvariant()">@member.Status</span>
+                            </td>
+                            <td>@member.JoinDate.ToLocalTime().ToString("MMM d, yyyy")</td>
+                            <td class="action-cell">
+                                <a class="text-link" asp-page="/Members/Details"
+                                   asp-route-memberId="@member.MemberId">View member →</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}

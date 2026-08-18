@@ -1,0 +1,52 @@
+@page
+@model MembershipPlatform.Web.Pages.Classes.IndexModel
+@{
+    ViewData["Title"] = "Classes";
+}
+
+<section class="hero">
+    <p class="eyebrow">Class directory</p>
+    <h1>Fitness classes</h1>
+    <p>Browse the schedule, compare remaining capacity, and open a class to view or add registrations.</p>
+</section>
+
+@if (Model.Error is not null)
+{
+    <partial name="_ApiError" model="Model.Error" />
+}
+else if (Model.Classes.Count == 0)
+{
+    <section class="panel">
+        <p class="muted">No fitness classes are available.</p>
+    </section>
+}
+else
+{
+    <aside class="demo-callout">
+        Open a class to view registered members. Register an active member twice to
+        demonstrate successful registration followed by duplicate protection.
+    </aside>
+
+    <div class="card-grid">
+        @foreach (var fitnessClass in Model.Classes)
+        {
+            var registrationCount = Model.GetRegistrationCount(fitnessClass.ClassId);
+            var remainingCapacity = Math.Max(fitnessClass.Capacity - registrationCount, 0);
+            <article class="card class-card">
+                <p class="eyebrow">@fitnessClass.StartTime.ToLocalTime().ToString("ddd, MMM d · h:mm tt")</p>
+                <h2>@fitnessClass.Name</h2>
+                <p class="metric">
+                    <strong>@registrationCount</strong>
+                    of @fitnessClass.Capacity registered
+                </p>
+                <progress value="@registrationCount" max="@Math.Max(fitnessClass.Capacity, 1)"
+                          aria-label="@registrationCount of @fitnessClass.Capacity places registered"></progress>
+                <div class="card-footer">
+                    <span class="muted">@remainingCapacity places remaining</span>
+                    <a class="text-link" asp-page="/Classes/Details"
+                       asp-route-classId="@fitnessClass.ClassId">View class →</a>
+                </div>
+            </article>
+        }
+    </div>
+}

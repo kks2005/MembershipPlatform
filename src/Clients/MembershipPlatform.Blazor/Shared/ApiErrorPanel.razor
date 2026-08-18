@@ -1,0 +1,16 @@
+@if (Error is not null)
+{
+    <div class="error-panel" role="alert">
+        <strong>@Error.Message</strong>
+        <span>Code: @Error.Code</span>
+        @if (!string.IsNullOrWhiteSpace(Error.OperationId))
+        {
+            <span>Reference: @Error.OperationId</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public ApiError? Error { get; set; }
+}

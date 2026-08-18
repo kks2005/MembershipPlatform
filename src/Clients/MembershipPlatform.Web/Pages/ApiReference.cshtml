@@ -1,0 +1,122 @@
+@page
+@{
+    ViewData["Title"] = "API Reference";
+}
+
+<section class="hero">
+    <p class="eyebrow">Version 1</p>
+    <h1>API Reference</h1>
+    <p>
+        A concise reference for the HTTP endpoints demonstrated by this POC.
+        All routes are relative to <code>http://localhost:5105</code> by default.
+    </p>
+</section>
+
+<section class="panel">
+    <p class="eyebrow">Member operations</p>
+    <h2>Members</h2>
+    <div class="table-wrapper">
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th scope="col">Method</th>
+                    <th scope="col">Endpoint</th>
+                    <th scope="col">Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/members</code></td>
+                    <td>List all members and their current status.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/members/{memberId}/check-ins</code></td>
+                    <td>List a member's check-in history.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">POST</span></td>
+                    <td><code>/api/v1/members/{memberId}/check-ins</code></td>
+                    <td>Check in an active member.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/members/{memberId}/classes</code></td>
+                    <td>List classes registered by a member.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">POST</span></td>
+                    <td><code>/api/v1/members/{memberId}/documents</code></td>
+                    <td>Upload a member document as multipart form data.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel reference-note">
+    <p class="eyebrow">Class operations</p>
+    <h2>Classes</h2>
+    <div class="table-wrapper">
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th scope="col">Method</th>
+                    <th scope="col">Endpoint</th>
+                    <th scope="col">Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/classes</code></td>
+                    <td>List available fitness classes.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/classes/registration-summary</code></td>
+                    <td>Get registration totals for all classes.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">GET</span></td>
+                    <td><code>/api/v1/classes/{classId}/members</code></td>
+                    <td>List members registered for a class.</td>
+                </tr>
+                <tr>
+                    <td><span class="http-method">POST</span></td>
+                    <td><code>/api/v1/classes/{classId}/registrations/{memberId}</code></td>
+                    <td>Register an active member for a class.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="two-column reference-note">
+    <section class="panel">
+        <h2>Testing the endpoints</h2>
+        <p>
+            Paste a <strong>GET</strong> URL into the browser address bar. Use the
+            client forms, PowerShell, curl, or another API tool for
+            <strong>POST</strong> requests.
+        </p>
+        <p class="muted">
+            This page is intentionally static, human-oriented POC documentation.
+        </p>
+        <p class="muted">
+            Failed actions return a stable error code and an operation ID that can
+            be correlated with API logs.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>Seed identifiers</h2>
+        <ul class="seed-list">
+            <li>Active member: <code>11111111-1111-1111-1111-111111111111</code></li>
+            <li>Inactive member: <code>22222222-2222-2222-2222-222222222222</code></li>
+            <li>Morning Yoga: <code>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</code></li>
+            <li>Strength Training: <code>bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb</code></li>
+        </ul>
+    </section>
+</div>

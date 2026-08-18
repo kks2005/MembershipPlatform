@@ -1,0 +1,84 @@
+@page "{memberId:guid}"
+@model MembershipPlatform.Web.Pages.Members.DetailsModel
+@{
+    ViewData["Title"] = "Member";
+}
+
+<a class="back-link" asp-page="/Members/Index">← Members</a>
+
+@if (Model.Error is not null)
+{
+    <partial name="_ApiError" model="Model.Error" />
+}
+else if (Model.Member is not null)
+{
+    <div class="page-header member-header">
+        <div class="member-identity">
+            <p class="eyebrow">Member profile</p>
+            <h1>@Model.Member.Name</h1>
+            <div class="member-meta">
+                <span class="status-badge @Model.Member.Status.ToLowerInvariant()">@Model.Member.Status</span>
+                <span>@Model.Member.Email</span>
+                <span>Joined @Model.Member.JoinDate.ToLocalTime().ToString("MMM d, yyyy")</span>
+            </div>
+            <span class="member-id">Member ID: @Model.Member.MemberId</span>
+        </div>
+        <div class="action-stack">
+            <form method="post" asp-page-handler="CheckIn" asp-route-memberId="@Model.MemberId">
+                <button class="button" type="submit">Check in member</button>
+            </form>
+            @if (string.Equals(Model.Member.Status, "Inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                <span class="demo-hint">Try this action to demonstrate inactive-member rejection.</span>
+            }
+        </div>
+    </div>
+
+    <div class="two-column">
+        <section class="panel">
+            <h2>Registered classes</h2>
+            @if (Model.Classes.Count == 0)
+            {
+                <p class="muted">No active class registrations.</p>
+            }
+            @foreach (var fitnessClass in Model.Classes)
+            {
+                <div class="list-row">
+                    <div>
+                        <strong>@fitnessClass.Name</strong>
+                        <span>@fitnessClass.StartTime.ToLocalTime().ToString("g")</span>
+                    </div>
+                    <a class="text-link" asp-page="/Classes/Details"
+                       asp-route-classId="@fitnessClass.ClassId">View</a>
+                </div>
+            }
+        </section>
+
+        <section class="panel">
+            <h2>Recent check-ins</h2>
+            @if (Model.CheckIns.Count == 0)
+            {
+                <p class="muted">No check-ins recorded.</p>
+            }
+            @foreach (var checkIn in Model.CheckIns.OrderByDescending(item => item.CheckInDate).Take(10))
+            {
+                <div class="list-row">
+                    <span>@checkIn.CheckInDate.ToLocalTime().ToString("f")</span>
+                </div>
+            }
+        </section>
+    </div>
+
+    <section class="panel upload-panel">
+        <div>
+            <p class="eyebrow">Infrastructure-independent</p>
+            <h2>Upload member document</h2>
+            <p class="muted">Up to 10 MB. The client sees only an opaque storage key.</p>
+        </div>
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload"
+              asp-route-memberId="@Model.MemberId" class="upload-form">
+            <input asp-for="Document" type="file" />
+            <button class="button" type="submit">Upload</button>
+        </form>
+    </section>
+}

@@ -1,0 +1,47 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+
+# Test results and coverage
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.coveragexml
+
+# IDE and user-specific files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio and Azure deployment state
+**/Properties/PublishProfiles/
+**/Properties/ServiceDependencies/
+*.publishsettings
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+local.settings.json
+secrets.json
+*.pfx
+*.snk
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Local databases and file-storage data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+uploads/
