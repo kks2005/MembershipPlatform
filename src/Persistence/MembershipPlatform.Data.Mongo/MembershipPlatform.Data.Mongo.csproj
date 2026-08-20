@@ -4,4 +4,9 @@
     <ProjectReference Include="..\..\MembershipPlatform.Core\MembershipPlatform.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
 </Project>

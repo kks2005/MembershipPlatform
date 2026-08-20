@@ -1,22 +1,35 @@
 using MembershipPlatform.Core.Entities;
 using MembershipPlatform.Core.Repositories;
+using MongoDB.Driver;
 
 namespace MembershipPlatform.Data.Mongo.Repositories;
 
 public sealed class MongoMemberRepository : IMemberRepository
 {
-    public Task<IReadOnlyList<Member>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+    private readonly IMongoCollection<Member> _members;
+
+    public MongoMemberRepository(IMongoDatabase database)
     {
-        // TODO: Implement member-list retrieval with the selected MongoDB driver.
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(database);
+        _members = database.GetCollection<Member>("Members");
     }
 
-    public Task<Member?> GetByIdAsync(
+    public async Task<IReadOnlyList<Member>> GetAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _members
+            .Find(FilterDefinition<Member>.Empty)
+            .SortBy(m => m.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Member?> GetByIdAsync(
         Guid memberId,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Implement member retrieval with the selected MongoDB driver.
-        throw new NotImplementedException();
+        var filter = Builders<Member>.Filter.Eq(m => m.MemberId, memberId);
+        return await _members
+            .Find(filter)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

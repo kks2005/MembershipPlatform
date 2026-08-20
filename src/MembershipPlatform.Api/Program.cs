@@ -1,7 +1,8 @@
 using MembershipPlatform.Api.ErrorHandling;
-using MembershipPlatform.Application.Classes;
 using MembershipPlatform.Application.CheckIns;
+using MembershipPlatform.Application.Classes;
 using MembershipPlatform.Application.Members;
+using MembershipPlatform.Data.Mongo;
 using MembershipPlatform.Data.Sqlite;
 using MembershipPlatform.Data.SqlServer;
 using MembershipPlatform.Storage.Local;
@@ -57,6 +58,17 @@ switch (persistenceProvider)
             ?? throw new InvalidOperationException(
                 "The ConnectionStrings:SqlServer configuration value is required.");
         builder.Services.AddSqlServerPersistence(sqlServerConnectionString);
+        break;
+
+    // Add this case to the switch statement
+    case "MongoDB":
+        var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
+            ?? throw new InvalidOperationException(
+                "The ConnectionStrings:MongoDB configuration value is required.");
+        var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"]
+            ?? throw new InvalidOperationException(
+                "The MongoDB:DatabaseName configuration value is required.");
+        builder.Services.AddMongoDbPersistence(mongoConnectionString, mongoDatabaseName);
         break;
 
     default:

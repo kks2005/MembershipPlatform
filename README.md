@@ -106,13 +106,13 @@ generic repository, generic storage framework, or shared infrastructure service.
 
 | Capability | Application use case | Core port | Implementations |
 | --- | --- | --- | --- |
-| Check in member | `CheckInMember` | Member and check-in repositories | SQLite / SQL Server |
-| Get member check-ins | `GetMemberCheckIns` | Check-in repository | SQLite / SQL Server |
-| List classes | `GetClasses` | Class repository | SQLite / SQL Server |
-| Register member for class | `RegisterMemberForClass` | Class-registration repository | SQLite / SQL Server |
-| Get classes for member | `GetClassesForMember` | Member-class query | SQLite / SQL Server |
-| Get members for class | `GetMembersForClass` | Class-registration query | SQLite / SQL Server |
-| Get registration summary | `GetClassRegistrationSummary` | Class-registration query | SQLite / SQL Server |
+| Check in member | `CheckInMember` | Member and check-in repositories | SQLite / SQL Server / MongoDB |
+| Get member check-ins | `GetMemberCheckIns` | Check-in repository | SQLite / SQL Server / MongoDB |
+| List classes | `GetClasses` | Class repository | SQLite / SQL Server / MongoDB |
+| Register member for class | `RegisterMemberForClass` | Class-registration repository | SQLite / SQL Server / MongoDB |
+| Get classes for member | `GetClassesForMember` | Member-class query | SQLite / SQL Server / MongoDB |
+| Get members for class | `GetMembersForClass` | Class-registration query | SQLite / SQL Server / MongoDB |
+| Get registration summary | `GetClassRegistrationSummary` | Class-registration query | SQLite / SQL Server / MongoDB |
 | Upload member document | `UploadMemberDocument` | Member-document storage | Local filesystem |
 
 Class registration performs a final duplicate/capacity check and insert atomically
@@ -121,14 +121,12 @@ Server uses a serializable transaction and locking. Application interprets the
 same stable outcomes from either implementation.
 
 ## Adapter status
-
 | Adapter | Status |
 | --- | --- |
 | SQLite | Complete default local persistence adapter with automatic schema initialization and seed data |
 | SQL Server | Implemented ADO.NET adapter; migration scripts must be applied to the target database |
-| MongoDB | Placeholder only; it is not registered or runnable |
+| MongoDB | Complete implementation using MongoDB driver; requires running MongoDB instance |
 | Local document storage | Complete default storage adapter |
-| Azure Blob / Amazon S3 | Not implemented; future adapters can implement the existing storage port |
 
 ## API
 
@@ -312,33 +310,10 @@ SQL Server schema scripts under `Migrations` are applied in numerical order.
 `004_SeedDevelopmentData.sql` is optional POC data and is safe to run repeatedly;
 production environments should omit it.
 
-## Build
+## MongoDB persistence
 
-```powershell
-dotnet build MembershipPlatform.sln
-dotnet test MembershipPlatform.sln --configuration Release
-```
+To use MongoDB as the persistence provider, set `Persistence:Provider` to `MongoDB` and provide both the connection string and database name:
 
-Warnings are treated as errors. Continuous integration restores, builds, and tests
-the solution on pushes and pull requests to `main`. The test suite separates pure
-Application unit tests from real SQLite and local-filesystem adapter tests.
+MongoDB must be running and accessible. Unlike SQLite, the MongoDB adapter does not automatically seed sample data. Use the API endpoints to create initial records or implement a custom seeding utility.
 
-## Deliberate non-goals
-
-This reference implementation intentionally does not include:
-
-- MediatR or CQRS infrastructure
-- Generic repositories or Unit of Work
-- Entity Framework Core
-- A mapping framework
-- Docker or cloud deployment
-- A production-grade client application
-- Authentication and authorization
-- Paging, filtering, or sorting
-- Azure or AWS SDKs
-- A formal API-versioning framework while only `v1` exists
-- Production monitoring, backup, or secrets-management infrastructure
-- Business features beyond the demonstrated vertical slices
-
-The goal is to prove meaningful boundaries with working, tested implementations—not
-to predict every future requirement or reproduce a production platform.
+**Note:** The MongoDB adapter handles concurrent class registrations using duplicate key detection. Full ACID transaction support requires a MongoDB replica set or sharded cluster configuration.
